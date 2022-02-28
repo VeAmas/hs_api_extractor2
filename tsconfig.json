@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "target": "es6",
+    "lib": ["esnext", "dom"],
+    "strict": true,
+    "moduleResolution": "Node",
+    "module": "CommonJS",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "declaration": true,
+    "resolveJsonModule": true,
+    "strictNullChecks": true,
+    "downlevelIteration": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "noImplicitAny": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "sourceMap": true
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "**/node_modules",
+    "**/dist",
+    "**/test",
+    "**/*.test.ts",
+    "**/types"
+  ]
+}
