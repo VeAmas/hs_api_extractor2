@@ -1,17 +1,17 @@
-import { parse, ParserOptions } from '@babel/parser';
-import { File } from '@babel/types';
-import _debug from 'debug';
-import extractStats from './extractStats';
+import { parse, ParserOptions } from "@babel/parser";
+import { File } from "@babel/types";
+import _debug from "debug";
+import extractStats from "./extractStats";
 
-const debug = _debug('es-stats:file');
+const debug = _debug("es-stats:file");
 const pluginsPreset = [
-  'dynamicImport',
-  'classProperties',
-  'flowComments',
-  'objectRestSpread',
-  'functionBind',
-  'jsx',
-] as NonNullable<ParserOptions['plugins']>;
+  "dynamicImport",
+  "classProperties",
+  "flowComments",
+  "objectRestSpread",
+  "functionBind",
+  "jsx",
+] as NonNullable<ParserOptions["plugins"]>;
 /**
  * Get ES file imports, exports, and root declaration definitions.
  * Example:
@@ -34,14 +34,14 @@ export default function fileStats(
   debug(file);
   let plugins = parserOptions?.plugins || [];
   if (/\.jsx?$/.test(file)) {
-    plugins = plugins.concat(['flow', ...pluginsPreset]);
+    plugins = plugins.concat(["flow", ...pluginsPreset]);
   } else if (/\.tsx?$/.test(file)) {
-    plugins.concat(['typescript', ...pluginsPreset]);
+    plugins.concat(["typescript", ...pluginsPreset]);
   }
   const ast = parse(file, {
     ...(parserOptions || {}),
-    sourceType: 'module',
-    plugins: Array.from(new Set(plugins)),
+    sourceType: "module",
+    plugins: Array.from(new Set([...plugins, ...pluginsPreset])),
   });
   return extractStats(ast as File);
 }

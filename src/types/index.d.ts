@@ -36,4 +36,7 @@ export type Entry = {
 export type API = {
   isApi: true | false | "unknown";
   urls: string[];
+  name: string;
+  unknownApi: API[];
+  source?: string;
 };

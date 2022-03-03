@@ -8,94 +8,13 @@ import urlResolve from "./urlResolve";
 import _debug from "debug";
 const debug = _debug("api-processor");
 
-const SYSCONFIG = {
-  HSFUNDRISK_CONFIG: {
-    // 公共产品服务
-    API_HOME_CPBASIC_SERVER: "/fais2/fais2.0.cp-basic-server/v",
-    API_HOME_CPBASIC_HTTP: "/fais2/fais2.0.cp-basic-http/v",
-    APP_CODE: "hsfundFuncanal",
-    // 风控5.0公共服务
-    API_HOME_RISKPUBDATA_SERVER: "/fais2/fais2.0.cp-basic-server/v",
-    API_HOME_RISKPUBDATA_HTTP: "/fais2/fais2.0.cp-basic-http/v",
-    // 附件服务
-    API_HOME_ATTACHMENT_HTTP: "/fais2/fais2.0.cp-basic-http/v",
-    // 公共服务
-    API_HOME_ATTACHMENT_SERVER: "/fais2/fais2.0.cp-basic-server/v",
-    API_HOME_USERCFG_SERVER: "/fais2/fais2.0.cp-basic-server/v",
-    // 参数服务
-    API_HOME_PARAMSCFG_SERVER: "/fais2/fais2.0.cp-basic-server/v",
-    // 邮件服务
-    API_HOME_MSG: "/fais2/fais2.0.cp-basic-server/v",
-    // 研报查询
-    API_HOME_HREPORT_SERVER: "/hreport/HReport/v",
-    // 指标中心
-    API_HOME_INDEXCENTER_SERVER: "/fais2/fais2.0.risk-rpas-basic/v",
-    API_HOME_INDEXCENTER_SERVER_HTTP: "/fais2/fais2.0.risk-rpas-basic-http/v",
+type APIEntity = MemberRef & HasLoc & API;
 
-    // 本地用户管理
-    API_HOME_LOCALUSERMGT: "/fais2/fais2.0.cp-basic-server/v",
-    // 帆软报表
-    API_HOME_FINNERREPORT_SERVER: "/webroot/decision/url",
-    // 数据维护
-    API_HOME_DATAMANAGE_SERVER: "/fais2/fais-datamanage-server/v",
-    API_DATAMANAGE_HTTP: "/fais2/fais-datamanage-http/v",
-    // 文档中心
-    API_HOME_DOCUMENTCONTER_SERVER: "/fais2/fais-documentcenter-server/v",
-    // 限额监控
-    API_HOME_RISKMONITOR_SERVER: "/fais2/fais-riskmonitor-server/v",
-    API_HOME_RISKMONITOR_HTTP: "/fais2/fais-riskmonitor-http/v",
-    // 工作台
-    API_HOME_RISKMANAGE_SERVER: "/fais2/fais2.0.risk-rpas-basic/v",
-    API_HOME_RISKMANAGE_HTTP: "/fais2/fais2.0.risk-rpas-basic-http/v",
-    // MC计算服务
-    API_HOME_MC_SERVER: "/fais2/fais-monitorcalc-server/v",
-    // 自定义视图
-    API_HOME_CUSTOMIZED_SERVER: "/fais2/fais2.0.risk-rpas-basic/v",
-    API_HOME_CUSTOMIZED_HTTP: "/fais2/fais2.0.risk-rpas-basic-http/v",
+function dedupArray<T>(arr: T[]) {
+  return [...new Set(arr)];
+}
 
-    /** 标准功能 */
-    API_HOME_STANDARD_SERVER: "/fais2/fais2.0.risk-rpas-basic/v",
-    API_HOME_STANDARD_HTTP: "/fais2/fais2.0.risk-rpas-basic-http/v",
-
-    // 数据校验
-    API_HOME_DATAVALID_SERVER: "/fais2/fais-risk3-datacheck/v",
-
-    // 保监会报表服务
-    API_HOME_CIRCREPORT_SERVER: "/fais2/fais-circreport-server/v",
-    API_HOME_CIRCREPORT_HTTP: "/fais2/fais-circreport-http/v",
-
-    // 公共服务
-    API_HOME_PUB_SERVER: "/fais2/fais2.0.cp-basic-server/v",
-    API_HOME_PUB_HTTP: "/fais2/fais2.0.cp-basic-http/v",
-    USERCFG_HOME: "/fais2/fais2.0.cp-basic-server/v",
-
-    // 个性化功能
-    API_HOME_FIXINTRIAL_SERVER: "/fais2/fais2.0.risk-rpas-basic/v",
-
-    // 本地用户管理
-    API_HOME_LOCALUSERMGT_HTTP: "/fais2/fais2.0.cp-basic-http/v",
-
-    // this.$tabs.addNewTab
-    APP_CODE_PREFIX: "/hsfundFuncanal",
-    ROUTER_APP_CODE_PREFIX: "hsfundFuncanal",
-
-    DATAMANAGE_PREFIX: "/hsfundDatamanage",
-    CP_PREFIX: "/hsfundCp",
-    REPORT_PREFIX: "/hsfundReport",
-    MONITOR_PREFIX: "/hsfundMonitor",
-
-    // 数据维护公共常量
-    APPRAISE_DATAMANAGE_CONST: {
-      APP_CODE: "fais-datamanage",
-      HS_VALUATION_HISTORY: "risk-datamanage_hs_search_history",
-      APPR_SEARCH_HISTORY: "risk-datamanage_appr_search_history",
-      EXT_SEARCH_HISTORY: "risk-riskpubdata_ext_search_history",
-    },
-  },
-};
-
-/** 定义哪些入口的的文件可以当做API源 */
-const API_ENTRIES = ["@fais/tzjc-comps"];
+// const API_ENTRIES = ["@fais/tzjc-comps"];
 
 /** 从一个API强关联的node中提取API的url */
 const extractUrlFromAPI = (
@@ -135,7 +54,7 @@ const extractUrlFromAPI = (
                   node.start!,
                   node.end!
                 );
-                let n: any = SYSCONFIG;
+                let n: any = store.sysconfig;
                 expression
                   .split(".")
                   .slice(1)
@@ -190,27 +109,37 @@ export default function apiProcessor(filename?: string) {
     return;
   }
 
-  const { imports, exports: ex, relations } = fileStats(fileContent);
+  const {
+    imports,
+    exports: ex,
+    relations,
+  } = fileStats(fileContent, {
+    plugins: ["jsx"],
+  });
 
   // console.log("Imports:", imports);
   // console.log("Exports:", ex);
   // console.log("Relations:", relations);
 
   /** 引入的API相关的变量列表 */
-  const importedApi: (MemberRef & HasLoc & API)[] = [];
+  const importedApi: APIEntity[] = [];
 
   /** API强相关的引入(直接定义接口用的, 例如fetch之类的) */
   const apiAlis: string[] = [];
 
   imports.forEach((v) => {
-    if (API_ENTRIES.includes(v.source)) {
+    if (
+      store.apiEntries.find((ae) => ae.source === v.source && ae.name == v.name)
+    ) {
       apiAlis.push(v.alias);
     } else {
       if (v && v.name && v.alias) {
         importedApi.push({
           ...v,
+          source: urlResolve(filename, v.source),
           isApi: "unknown",
           urls: [],
+          unknownApi: [],
         });
       }
     }
@@ -218,50 +147,68 @@ export default function apiProcessor(filename?: string) {
 
   /** TODO: 判断API相关变量是否立即执行过 */
 
-  if (ex.extends) {
-    /** TODO: 处理Extends的部分 */
-  }
-
   /** 用于记录计算过的APIurl列表 */
-  const apiUrlMap: Map<string, string[]> = new Map();
+  const visistedExportMemberMap: Map<string, APIEntity> = new Map();
 
   /** 最后导出给别的文件使用的 所有带有API的exports */
-  const exportApi: (MemberRef & HasLoc & API)[] = [];
+  const exportApi: APIEntity[] = [];
 
   ex.members.forEach((exportInstance) => {
     debug("start process export member: " + exportInstance.name);
-    const res: MemberRef & HasLoc & API = {
+    const res: APIEntity = {
       ...exportInstance,
       isApi: "unknown",
       urls: [],
+      unknownApi: [],
     };
 
     const loop = (name: string) => {
       debug("start process export member-loop: " + name);
-      const isVisited = apiUrlMap.get(name);
-      let urls = apiUrlMap.get(name) || [];
+      const isVisited = visistedExportMemberMap.get(name);
+
+      let api: APIEntity = {
+        isApi: "unknown",
+        urls: [],
+        unknownApi: [],
+        alias: name,
+        loc: null,
+        name: name,
+      };
+
       if (isVisited) {
-        if (urls.length) {
-          res.isApi = true;
-          res.urls = res.urls.concat(urls);
+        api = visistedExportMemberMap.get(name)!;
+        if (res.isApi === false) {
+          res.isApi = api.isApi;
+        } else if (res.isApi === "unknown") {
+          res.isApi = api.isApi || "unknown";
         }
-        return urls;
+        res.urls = res.urls.concat(api.urls);
+        res.unknownApi = res.unknownApi.concat(api.unknownApi);
+        return api;
       }
 
-      apiUrlMap.set(name, urls);
+      visistedExportMemberMap.set(name, api);
 
-      /** 直接导出了Fetch之类的方法 不做处理(正常应该不会这样才对...) */
+      /**
+       * 直接导出了Fetch之类的方法
+       * (因为这个判断只有第一层loop才可能为真, 其他的都在「查找对应关系」的时候阻隔掉了)
+       * 将isApi改为true
+       */
       if (apiAlis.includes(name)) {
-        apiUrlMap.set(name, urls);
-        return [];
+        api.isApi = true;
+        store.apiEntries.push({ source: filename, name: name });
+        return api;
       }
 
       /** 如果用到了从其他文件引入的「带API的属性」,记录下来 */
-      const ipt = importedApi.find((v) => v.name === name);
+      const ipt = importedApi.find((v) => v.alias === name);
       if (ipt) {
-        urls = urls.concat(ipt.urls);
-        apiUrlMap.set(name, urls);
-        return urls;
+        api.urls = api.urls.concat(ipt.urls);
+        api.unknownApi = api.unknownApi.concat(ipt.unknownApi);
+        /** 执行到这里 ipt一定是一个unkonwn的API 所以放入unknownApi数组中 */
+        api.unknownApi.push(ipt);
+        visistedExportMemberMap.set(name, api);
+        return api;
       }
 
       /** 查找对应关系 */
@@ -272,7 +219,7 @@ export default function apiProcessor(filename?: string) {
             /** 如果是局部变量(Member) */
             if ("nodes" in v) {
               const nodes = v.nodes;
-              urls = urls.concat(
+              api.urls = api.urls.concat(
                 nodes.flatMap((v) =>
                   extractUrlFromAPI(v, relations, fileContent)
                 )
@@ -283,19 +230,27 @@ export default function apiProcessor(filename?: string) {
               /** */
             }
           } else {
-            /** 不然则递归 */
-            urls = urls.concat(loop(v.name));
+            /** 递归获取子变量的api */
+            const subApi = loop(v.name);
+            api.urls = api.urls.concat(subApi.urls);
+            api.unknownApi = api.unknownApi.concat(subApi.unknownApi);
           }
         });
       }
 
-      if (urls.length) {
+      if (api.urls.length) {
         res.isApi = true;
-        res.urls = res.urls.concat(urls);
+        res.urls = res.urls.concat(api.urls);
+      }
+      if (api.unknownApi) {
+        if (!res.isApi) {
+          res.isApi = true;
+        }
+        res.unknownApi = res.unknownApi.concat(api.unknownApi);
       }
 
-      apiUrlMap.set(name, urls);
-      return urls;
+      visistedExportMemberMap.set(name, api);
+      return api;
     };
 
     loop(exportInstance.name);
@@ -307,20 +262,97 @@ export default function apiProcessor(filename?: string) {
 
   store.exports.set(filename, exportApi);
 
-  imports.forEach((v) => {
-    const url = urlResolve(filename, v.source);
+  if (ex.extends) {
+    /** TODO: 处理Extends的部分 */
+    console.log(ex.extends);
+    ex.extends.forEach((v) => {
+      const url = urlResolve(filename, v);
+      if (url) {
+        let exptList = store.exports.get(url);
+        if (!exptList) {
+          apiProcessor(url);
+          exptList = store.exports.get(url);
+        }
 
-    if (url) {
-      let singleImportedList = store.exports.get(url);
-      if (!singleImportedList) {
-        apiProcessor(url);
-        singleImportedList = store.exports.get(url) || [];
+        if (exptList) {
+          exportApi.splice(exportApi.length, 0, ...exptList);
+        }
+      }
+    });
+  }
+
+  /** 对于某个api 哪些导出引用了它 */
+  const unknownApiReferMap: Map<string, APIEntity[]> = new Map();
+
+  const nextProcessUrls: Set<string> = new Set();
+  exportApi.forEach((expt) =>
+    expt.unknownApi.forEach((api) => {
+      if (api.source) {
+        nextProcessUrls.add(api.source);
+
+        let refer = unknownApiReferMap.get(api.name);
+        if (!refer) {
+          refer = [];
+          unknownApiReferMap.set(api.name, refer);
+        }
+        refer.push(expt);
+      }
+    })
+  );
+
+  const recurseExport = () => {
+    debug("recurse-export form: " + filename);
+    const cbList = store.exportMemberCallbacks.get(filename);
+    if (cbList?.length) {
+      cbList.forEach((cb) => cb());
+    }
+  };
+
+  nextProcessUrls.forEach((url) => {
+    let cbs = store.exportMemberCallbacks.get(url);
+    if (!cbs) {
+      cbs = [];
+      store.exportMemberCallbacks.set(url, cbs);
+    }
+
+    cbs.push(() => {
+      let needRecurse = false;
+      const apis = store.exports.get(url);
+      if (!apis) {
+        return;
       }
 
-      const importedApi = singleImportedList.find((v) => v.alias === v.name);
-      if (importedApi) {
-        // importedList.push(importedApi);
+      debug("recurse-to: " + filename);
+
+      apis.forEach((api) => {
+        if (api.isApi !== true) {
+          return;
+        }
+
+        debug("recurse-api: " + api.alias);
+        const list = unknownApiReferMap.get(api.alias);
+        list?.forEach((v) => {
+          v.urls = dedupArray(v.urls.concat(api.urls));
+          v.unknownApi.splice(
+            v.unknownApi.findIndex((ua) => ua.name === api.alias),
+            1
+          );
+          if (v.unknownApi.length === 0) {
+            v.isApi = true;
+            needRecurse = true;
+          }
+        });
+      });
+
+      if (needRecurse) {
+        recurseExport();
       }
+    });
+
+    if (!store.exports.get(url)) {
+      apiProcessor(url);
     }
   });
+
+  recurseExport();
 }

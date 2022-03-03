@@ -18,7 +18,10 @@ const alis = {
 /**
  * 处理引用文件的路径
  */
-export default function handleUrl(baseFileUrl: string, offset: string) {
+export default function handleUrl(baseFileUrl: string, offset = "") {
+  if (!offset) {
+    return baseFileUrl;
+  }
   baseFileUrl = baseFileUrl.replace(/\\/g, "/").trim();
   offset = offset.trim();
   const baseDir = (baseFileUrl.match(/(^.*\/)[^/]*$/) || ["", ""])[1] || "";
@@ -31,10 +34,8 @@ export default function handleUrl(baseFileUrl: string, offset: string) {
 
   let dir = "";
 
-  if (
-    /** 有alias */
-    alias
-  ) {
+  /** 有alias */
+  if (alias) {
     dir = offset.replace(new RegExp("^" + alias), alis[alias]);
 
     /** 根目录 */

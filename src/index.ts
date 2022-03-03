@@ -11,14 +11,21 @@ import store from "./apiProcessor/store";
 // } = fileStats(fs.readFileSync("D:/Git/ast/test/customized.js", "utf-8"));
 
 // const ex = apiProcessor("D:/Git/ast/test/template.vue");
-const ex = apiProcessor(
+// const ex =
+
+const filename = `D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/hsfundFuncanal/views/fais-indexcenter/indexDoc/index.vue`;
+// const filename = `D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/hsfundFuncanal/views/fais-personalize/portTrial/staticPortTrial/test.vue`;
+
+apiProcessor(
   urlResolve(
-    store.base,
-    "/src/hsfundFuncanal/views/fais-indexcenter/templateManage"
+    // store.base,
+    filename
+    // "/src/hsfundFuncanal/views/fais-indexcenter/templateManage"
+    // "/src/hsfundFuncanal/api/modules/personalize/index.js"
   )
 );
 
-console.log(ex);
+// console.log(ex);
 
 // console.log("Imports:", imports);
 // console.log("Exports:", ex);
@@ -37,6 +44,4 @@ console.log(ex);
 //   )
 // );
 
-store.exports.forEach((v) => {
-  console.log(v);
-});
+console.log(store.exports.get(filename));
