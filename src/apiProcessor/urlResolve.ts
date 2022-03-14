@@ -7,14 +7,6 @@ const alis = {
   "@hsfundFuncanal": path.resolve(store.base, "src/hsfundFuncanal"),
 };
 
-// export default (url: string, baseUrl: string) => {
-//   for (const key in alis) {
-//     url = url.replace(new RegExp("^" + key), alis[key]);
-//   }
-
-//   return path.join(baseUrl, url);
-// };
-
 /**
  * 处理引用文件的路径
  */
@@ -49,6 +41,13 @@ export default function handleUrl(baseFileUrl: string, offset = "") {
     /** node_modules */
   } else {
     /** TODO: node_modules */
+
+    /** 目前只处理@fais/tzjc-comps 其他肯定也没有api (关键我不知道怎么 resolve node_modules 的api) */
+    if (offset.indexOf("@fais/tzjc-comps") === 0) {
+      dir = path.resolve(store.base, "node_modules", offset);
+    } else {
+      return offset;
+    }
   }
 
   dir = dir.replace(/\\/g, "/");

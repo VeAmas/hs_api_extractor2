@@ -9,7 +9,13 @@ import { NodePath, Visitor } from "@babel/traverse";
 import getPatternNames from "../getPatternNames";
 import getDeclarationNames from "../getDeclarationNames";
 import getModuleReffromExportSpecifier from "../getModuleRefFromExportSpecifier";
-import { Declarations, MemberRef, ImportBase, Member } from "../../types";
+import {
+  Declarations,
+  MemberRef,
+  ImportBase,
+  Member,
+  Constants,
+} from "../../types";
 import _debug from "debug";
 import { MODULE_DEFAULT } from "../constants";
 
@@ -27,7 +33,8 @@ type Scope = {
  * @param relations 生成的变量间引用关系
  */
 export default function createRootRelationVisitors(
-  relations: Declarations = {}
+  relations: Declarations = {},
+  constant: Constants = new Map()
 ): Visitor {
   /** visitor在访问时的当前的作用域 (非函数级 而是更广义上的作用域) */
   let scope = { privates: new Set(), candidates: [] } as Scope;
@@ -117,7 +124,8 @@ export default function createRootRelationVisitors(
         newScope();
       },
       /** 离开声明作用域 */
-      exit({ node }) {
+      exit(path) {
+        const { node } = path;
         debug("EXIT-variable scope", parentScopes, scope);
         /** 获取哦变量声明作用域中的[全局变量候选] */
         const candidates = exitScopeHandler();
@@ -134,6 +142,27 @@ export default function createRootRelationVisitors(
               };
             });
           }
+
+          /**
+           * 在根级作用域下 如果声明了一个变量且赋值了初始值(且为字符串或者数字)
+           * 则将该变量和初始值存入constant表中
+           * NOTE: 这里将let声明的变量也作为常量处理 有可能需要修改
+           */
+          node.declarations.forEach((node) => {
+            const init = node.init;
+            if (
+              init &&
+              (init.type === "NumericLiteral" || init.type === "StringLiteral")
+            ) {
+              const leftNames = getPatternNames(node.id);
+              leftNames.forEach((v) => {
+                /** NOTE: 这里可能要考虑解构的情况 */
+                if (init) {
+                  constant.set(v.alias, init.value + "");
+                }
+              });
+            }
+          });
         }
       },
     },
@@ -190,8 +219,10 @@ export default function createRootRelationVisitors(
           }, [] as Array<MemberRef>);
           addRefsToPrivates(refs);
         } else if (p.isCatchClause()) {
-          /** try的catch也要把参数存入作用域 */
-          addRefsToPrivates(getPatternNames(p.node.param as LVal));
+          /** try的catch也要把参数存入作用域 (catch不一定有参数) */
+          if (p.node.param) {
+            addRefsToPrivates(getPatternNames(p.node.param as LVal));
+          }
         }
       },
       exit(p) {

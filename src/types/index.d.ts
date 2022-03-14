@@ -24,6 +24,8 @@ export type Declarations = {
     dependencies: (Member | ImportBase)[];
   };
 };
+export type Constant = string
+export type Constants = Map<string, Constant>
 export type MemberRelation = {
   [name: string]: (Member | ImportBase)[];
 };

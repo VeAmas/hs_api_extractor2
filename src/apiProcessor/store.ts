@@ -88,10 +88,22 @@ export default {
       },
     },
   },
-  exportMemberCallbacks: new Map() as Map<string, Function[]>,
+  exportMemberCallbacks: new Map() as Map<
+    string,
+    { source: string; fn: Function }[]
+  >,
   /** 定义哪些入口的的文件可以当做API源 */
   apiEntries: [
-    { source: "@fais/tzjc-comps", name: "httpCamel" },
-    { source: "@fais/tzjc-comps", name: "httpUnderline" },
+    {
+      source:
+        "D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/node_modules/@fais/tzjc-comps/index.js",
+      name: "httpCamel",
+    },
+    {
+      source:
+        "D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/node_modules/@fais/tzjc-comps/index.js",
+      name: "httpUnderline",
+    },
   ],
+  result: new Map() as Map<string, (MemberRef & HasLoc & API)[]>,
 };
