@@ -1,12 +1,14 @@
 import fileStats from "../fileStats/index";
 import fs from "fs";
-import { API, Constants, HasLoc, MemberRef, MemberRelation } from "../types";
+import { API, HasLoc, MemberRef } from "../types";
 import { Node } from "@babel/types";
 import vueScriptExtract from "./vueScriptExtract";
 import store from "./store";
 import urlResolve from "./urlResolve";
 import _debug from "debug";
 import routeDistribute from "./routeDistribute";
+import { extractUrlFromAPI } from "./extractUrlFromAPI";
+
 const debug = _debug("api-processor");
 
 type APIEntity = MemberRef & HasLoc & API;
@@ -14,91 +16,6 @@ type APIEntity = MemberRef & HasLoc & API;
 function dedupArray<T>(arr: T[]) {
   return [...new Set(arr)];
 }
-
-/** 从一个API强关联的node中提取API的url */
-const extractUrlFromAPI = (
-  node: Node,
-  relations: MemberRelation,
-  fileContent: string,
-  constants: Constants
-) => {
-  const res: string[] = [];
-
-  if (node.type === "CallExpression") {
-    const args = node.arguments;
-
-    args.forEach((arg) => {
-      /** 如果直接是一个字符串 */
-      if (arg.type === "StringLiteral") {
-        res.push(arg.value.split("?")[0]);
-
-        /** 如果是一个加法运算 */
-      } else if (arg.type === "BinaryExpression") {
-        const exprssion: string[] = [];
-
-        const loop = (n: Node) => {
-          if (n.type === "BinaryExpression") {
-            loop(n.left);
-            loop(n.right);
-          } else if (n.type === "StringLiteral") {
-            exprssion.push(n.value);
-
-            /** 如果是一个变量 */
-          } else if (n.type === "Identifier") {
-            /** 查找全局变量中是否存在该变量 */
-            if (relations[n.name]) {
-              const relation = relations[n.name]?.[0];
-              if (relation) {
-                if ("nodes" in relation && relation.nodes[0]) {
-                  const node = relation.nodes[0];
-                  const expression = fileContent.substring(
-                    node.start!,
-                    node.end!
-                  );
-                  let n: any = store.sysconfig;
-                  expression
-                    .split(".")
-                    .slice(1)
-                    .forEach((v) => {
-                      n = n[v];
-                    });
-
-                  exprssion.push(n);
-                }
-              } else {
-                const constant = constants.get(n.name);
-                if (!constant) {
-                  return;
-                }
-                exprssion.push(constant);
-              }
-            } else {
-              /** TODO: 如果是一个函数内部定义的局部变量的话怎么办? */
-            }
-          } else {
-            /** 其他情况 (例如是个函数调用或者'MemberExpression') 暂时不用处理吧 */
-          }
-        };
-
-        loop(arg);
-
-        res.push(exprssion.join("").split("?")[0]);
-
-        /** 其他情况 */
-      } else {
-        /** */
-      }
-    });
-
-    return res;
-
-    /** 其他情况 (TODO:待补充) */
-  } else {
-    /** 不是调用的话 就不管了 */
-  }
-
-  return [];
-};
 
 /**
  * 判断某个AST节点时候和某个变量等价
@@ -148,17 +65,18 @@ export default function apiProcessor(filename?: string) {
 
   if (imports.some((v) => v.name.includes("#default"))) {
     /** FIXME: 这样判断文件是否是路由文件 不太准确 带 */
-    if (filename.includes('router')) {
-
+    if (filename.includes("router")) {
       routeDistribute({
         filename,
         imports,
       });
       return;
     } else {
-      imports.filter((v) => v.name.includes("#default")) .forEach(v => {
-        v.alias = ''
-      })
+      imports
+        .filter((v) => v.name.includes("#default"))
+        .forEach((v) => {
+          v.alias = "";
+        });
     }
   }
 
