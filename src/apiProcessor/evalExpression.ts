@@ -11,7 +11,16 @@ import { clipCodeFromLoc } from "./utils";
 export default function (
   expression: Expression,
   code: string,
-  scope: { [key: string]: any } | { (key: string): any } = {}
+  scope: { [key: string]: any } | { (key: string): any } | undefined = {},
+  overrideCases?: {
+    [key in Expression["type"]]?: {
+      (
+        node: Expression,
+        loop: (node: Expression) => any,
+        currentScopeDepth: number
+      ): any;
+    };
+  }
 ): any | undefined {
   const getValueFromScope = (key: string) => {
     if (typeof scope === "function") {
@@ -21,11 +30,16 @@ export default function (
     }
   };
 
+  let currentScopeDepth = 0;
+
   const loop = (node: typeof expression): any => {
     /** 字面量 */
     if (isLiteral(node)) {
       return eval(clipCodeFromLoc(code, node));
     } else {
+      if (overrideCases?.[node.type]) {
+        return overrideCases[node.type]?.(node, loop, currentScopeDepth);
+      }
       switch (node.type) {
         /** 变量 */
         case "Identifier": {
@@ -72,7 +86,7 @@ export default function (
           const object = node.object;
           const property = node.property;
           const objectValue = loop(object);
-          const propertyValue = node.computed ? loop(property) : property;
+          const propertyValue = node.computed ? loop(property) : property.name;
           return objectValue?.[propertyValue];
         }
         /** 一元运算 (-a) */
@@ -113,6 +127,7 @@ export default function (
         }
         /** 对象字面量 */
         case "ObjectExpression": {
+          currentScopeDepth++;
           const properties = node.properties;
           const ret = {};
           properties.forEach((v) => {
@@ -139,12 +154,14 @@ export default function (
                 } else {
                   /** 其他情况就不管了 我没碰到过其他情况 */
                   // v.value.type === ''
+                  currentScopeDepth--;
                   return;
                 }
               }
               ret[key] = value;
             }
           });
+          currentScopeDepth--;
           return ret;
         }
         /** new表达式 */

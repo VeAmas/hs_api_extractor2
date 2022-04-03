@@ -1,8 +1,16 @@
 import { Constants, MemberRelation } from "../types";
-import { isExpression, Node } from "@babel/types";
+import { BinaryExpression, isExpression, Node } from "@babel/types";
 import store from "./store";
 import evalExpression from "./evalExpression";
 import { clipCodeFromLoc } from "./utils";
+import getVueThisScope from "./getVueThisScope";
+
+export class AlternativeList extends Array {
+  constructor(param: number) {
+    super(param);
+  }
+  __isAlternativeList = true;
+}
 
 export /** 从一个API强关联的node中提取API的url */
 const extractUrlFromAPI = (
@@ -16,13 +24,13 @@ const extractUrlFromAPI = (
   if (node.type === "CallExpression") {
     const args = node.arguments;
 
-    let thisScope = null;
+    let thisScope: any = null;
 
     const scopeFn = (key: string) => {
       if (key === "window") return Object.freeze(store.sysconfig);
       if (key === "this") {
         if (!thisScope) {
-          /** */
+          thisScope = getVueThisScope(fileContent);
         }
         return thisScope;
       }
@@ -34,18 +42,64 @@ const extractUrlFromAPI = (
       }
     };
 
+    // @ts-ignore
+    function BinaryExpression(_node, loop) {
+      const node = _node as BinaryExpression;
+      const op = node.operator;
+      const leftNode = node.left;
+      const rightNode = node.right;
+      const leftValue = loop(leftNode);
+      const rightValue = loop(rightNode);
+      const fn = new Function("a, b", "return a " + op + " b;");
+
+      const isNotNull = (value: any) => {
+        return value !== null && value !== undefined;
+      };
+
+      if (
+        (isNotNull(leftValue) &&
+          Object.getPrototypeOf(leftValue) === AlternativeList.prototype) ||
+        (isNotNull(rightValue) &&
+          Object.getPrototypeOf(rightValue) === AlternativeList.prototype)
+      ) {
+        const leftArray =
+          Object.getPrototypeOf(leftValue ?? 0) === AlternativeList.prototype
+            ? leftValue
+            : [leftValue];
+        const rightArray =
+          Object.getPrototypeOf(rightValue ?? 0) === AlternativeList.prototype
+            ? rightValue
+            : [rightValue];
+        const list = new AlternativeList(0);
+        leftArray.forEach((v: any) => {
+          rightArray.forEach((u: any) => {
+            list.push(fn(v, u));
+          });
+        });
+        return list;
+      } else {
+        return fn(leftValue, rightValue);
+      }
+    }
+
     if (args[0]) {
       const arg = args[0];
       const codeClip = clipCodeFromLoc(fileContent, arg);
       if (!codeClip) return [];
       let argValue;
       if (arg.type === "SpreadElement") {
-        argValue = evalExpression(arg.argument, fileContent, scopeFn);
+        argValue = evalExpression(arg.argument, fileContent, scopeFn, {
+          BinaryExpression,
+        });
       } else if (isExpression(arg)) {
-        argValue = evalExpression(arg, fileContent, scopeFn);
+        argValue = evalExpression(arg, fileContent, scopeFn, {
+          BinaryExpression,
+        });
       }
 
-      if (typeof argValue === "string") {
+      if (Object.getPrototypeOf(argValue ?? 0) === AlternativeList.prototype) {
+        argValue.forEach((v: string) => res.push(v));
+      } else if (typeof argValue === "string") {
         res.push(argValue);
       } else if (typeof argValue === "object") {
         if (argValue.url) {
