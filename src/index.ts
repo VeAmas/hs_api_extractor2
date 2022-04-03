@@ -19,7 +19,8 @@ import path from "path";
 const filename =
   // "D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/hsfundFuncanal/views/fais-indexcenter/indexDoc/index.vue";
   // "D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/hsfundFuncanal/views/fais-indexcenter/viewList/index.vue";
-"D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/hsfundFuncanal/views/fais-standardize/components/QueryComponents/FaisAggregationTree/index.vue";
+  // "D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/hsfundFuncanal/views/fais-indexcenter/templateManage/index.vue";
+// "D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/hsfundFuncanal/views/fais-standardize/components/QueryComponents/FaisAggregationTree/index.vue";
 // "D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/node_modules/@fais/tzjc-comps/FaisRuleSet/index.vue";
 // "D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/hsfundFuncanal/views/fais-indexcenter/viewList/part/viewOperate/index.vue";
 // "D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/hsfundFuncanal/components/PortTree/part/search.vue";
@@ -30,7 +31,7 @@ const filename =
 // "D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/hsfundFuncanal/api/modules/indexcenter/main.js";
 // "D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/hsfundFuncanal/api/modules/customized/index.js"
 // "D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/hsfundFuncanal/router/modules/indexcenter.js";
-// "D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/index.js";
+"D:/Git/rpas/FAIS2-0-RISK-RPAS/risk-rpas-basic/risk-rpas-basic-ui/src/index.js";
 
 apiProcessor(
   urlResolve(
@@ -62,7 +63,7 @@ apiProcessor(
 
 console.log(store.exports.get(filename));
 
-if (false) {
+if (true) {
   let outputString = "menuId,url\r\n";
 
   store.result.forEach((v, menuId) => {

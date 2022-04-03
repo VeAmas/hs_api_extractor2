@@ -4,6 +4,7 @@ import store from "./store";
 import evalExpression from "./evalExpression";
 import { clipCodeFromLoc } from "./utils";
 import getVueThisScope from "./getVueThisScope";
+import getAllLocalScope from "./getAllLocalScope";
 
 export class AlternativeList extends Array {
   constructor(param: number) {
@@ -19,6 +20,7 @@ const extractUrlFromAPI = (
   fileContent: string,
   constants: Constants
 ) => {
+  const getScope = getAllLocalScope(fileContent);
   const res: string[] = [];
 
   if (node.type === "CallExpression") {
@@ -38,7 +40,20 @@ const extractUrlFromAPI = (
         return constants.get(key);
       } else if (key in relations) {
         relations[key];
-        // return evalExpression()
+        const relation = relations[key]?.[0];
+        if (
+          relation &&
+          "nodes" in relation &&
+          isExpression(relation.nodes[0])
+        ) {
+          return evalExpression(relation.nodes[0], fileContent, scopeFn);
+        }
+        return;
+      } else {
+        if (node.start && node.end) {
+          const x = getScope(node.start, node.end);
+          return x?.[key];
+        }
       }
     };
 
@@ -98,7 +113,9 @@ const extractUrlFromAPI = (
       }
 
       if (Object.getPrototypeOf(argValue ?? 0) === AlternativeList.prototype) {
-        argValue.forEach((v: string) => res.push(v));
+        argValue.forEach((v: string) => {
+          res.push(v);
+        });
       } else if (typeof argValue === "string") {
         res.push(argValue);
       } else if (typeof argValue === "object") {
@@ -171,7 +188,7 @@ const extractUrlFromAPI = (
     //   }
     // });
 
-    return res;
+    return res.map((v) => v.split("?")[0]);
 
     /** 其他情况 (TODO:待补充) */
   } else {

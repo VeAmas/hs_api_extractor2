@@ -43,7 +43,7 @@ export default function apiProcessor(filename?: string) {
   try {
     fileContent = fs.readFileSync(filename, "utf-8");
   } catch {
-    console.warn("node_modules: " + filename);
+    // console.warn("node_modules: " + filename);
   }
 
   if (filename.match(/.vue$/)) {
